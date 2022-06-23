@@ -1,16 +1,3 @@
-"""
-.. module:: bmp180
-
-*************
-BMP180 Module
-*************
-
-This module contains the driver for BOSCH BMP180 Digital Barometric Pressure Sensor. The ultra-low power, low voltage electronics of the BMP180 is optimized for use in mobile devices and the I2C interface allows for easy
-system integration with a microcontroller. The BMP180 is based on piezo-resistive technology for EMC robustness, high accuracy and linearity as
-well as long term stability (`datasheet <https://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMP180-DS000-121.pdf>`_).
-    """
-
-
 import i2c
 
 # BMP180 default address.
@@ -69,33 +56,28 @@ LCD_MODE_RS = 0x01
 
 class LCD(i2c.I2c):
     """
-.. class:: BMP180(i2cdrv, addr=0x77, clk=100000)
+    .. class:: LCD(i2cdrv, addr=LCD_I2CADDR, clk=400000)
 
-    Creates an intance of a new BMP180.
+    Creates an intance of a new LCD1602.
 
-    :param i2cdrv: I2C Bus used '( I2C0, ... )'
-    :param addr: Slave address, default 0x77
-    :param clk: Clock speed, default 100kHz
+    :param i2cdrv: The I2C bus to use.
+    :param addr: The I2C address of the LCD.
+    :param clk: The I2C clock speed.
 
     Example: ::
 
-        from bosch.bmp180 import bmp180
+        from lcd import lcd
 
         ...
 
-        bmp = bmp180.BMP180(I2C0)
-        bmp.start()
-        bmp.init()
-        temp, pres = bmp.get_temp_pres()
-
+        lcd = lcd.LCD(i2cdrv, 0x27, 400000)
+        lcd.writeString("Hello World!")
     """
 
-    #Init
     def __init__(self, drvname, addr=LCD_I2CADDR, clk=400000):
-        i2c.I2c.__init__(self, addr, drvname, clk)
-        self._addr = addr
-        self._oss = 0
-        self.init()
+        i2c.I2c.__init__(self, addr, drvname, clk)                                                          #initialize the I2C bus
+        self._addr = addr                                                                                   #save the address
+        self.init()                                                                                         #start the init
 
 
     def init(self):
@@ -106,12 +88,12 @@ class LCD(i2c.I2c):
 
         """
 
-        self._backlightval = LCD_BACKLIGHT
-        self._displaycontrol = LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF
-        self._displaymode = LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT
+        self._backlightval = LCD_BACKLIGHT                                                                  # set backlight to on
+        self._displaycontrol = LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF                                 # turn display on, cursor off, blink off
+        self._displaymode = LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT                                         # set the entry mode
 
         # Try to set 4 bit mode
-        self._write4bits(0x03 << 4)
+        self._write4bits(0x03 << 4)                                                                         #try to set 4bit mode, wait and try again
         sleep(5)
         self._write4bits(0x03 << 4)
         sleep(5)
@@ -122,11 +104,11 @@ class LCD(i2c.I2c):
         self._write4bits(0x02 << 4)
 
         # # Set 2 line mode
-        self._command(LCD_CMD_FUNCTIONSET | LCD_4BITMODE | LCD_2LINE | LCD_5x8DOTS)
+        self._command(LCD_CMD_FUNCTIONSET | LCD_4BITMODE | LCD_2LINE | LCD_5x8DOTS)                         #set 4 bit mode, 2 line, 5x8 dots
 
         # Set display settings
-        self._command(LCD_CMD_DISPLAYCONTROL | self._displaycontrol)
-        self._command(LCD_CMD_ENTRYMODESET | self._displaymode)
+        self._command(LCD_CMD_DISPLAYCONTROL | self._displaycontrol)                                        #turn display on, cursor off, blink off
+        self._command(LCD_CMD_ENTRYMODESET | self._displaymode)                                             #set the entry mode
 
         # Clear the display
         self.clear()
@@ -138,7 +120,7 @@ class LCD(i2c.I2c):
 
     ######High level public functions######
 
-    def clear(self):
+    def clear(self):                                                                                        #clear the LCD
         """
         .. method:: clear()
 
@@ -148,7 +130,7 @@ class LCD(i2c.I2c):
         self._command(LCD_CMD_CLEARDISPLAY)
         sleep(2)
 
-    def home(self):
+    def home(self):                                                                                         #go to the home position
         """
         .. method:: home()
 
@@ -158,7 +140,7 @@ class LCD(i2c.I2c):
         self._command(LCD_CMD_RETURNHOME)
         sleep(2)
 
-    def setBacklight(self, val):
+    def setBacklight(self, val):                                                                            #set backlight on/off
         """
         .. method:: setBacklight(val)
 
@@ -173,8 +155,7 @@ class LCD(i2c.I2c):
             self._backlightval = LCD_BACKLIGHT
         self._expanderWrite(0)
 
-    # Load custom characters
-    def loadCustomCharacter(self, char_arr, location):
+    def loadCustomCharacter(self, char_arr, location):                                                      #load custom characters in the LCD memory
         """
         .. method:: loadCustomCharacter(char_arr, location)
 
@@ -188,8 +169,7 @@ class LCD(i2c.I2c):
         for char_byte in char_arr:
             self._writeChar(char_byte)
 
-    # Set autoscroll
-    def setAutoscroll(self, state):
+    def setAutoscroll(self, state):                                                                         #turns on/off autoscroll
         """
         .. method:: setAutoscroll(state)
 
@@ -204,8 +184,8 @@ class LCD(i2c.I2c):
             self._displaymode &= ~LCD_ENTRYSHIFTINCREMENT
         self._command(LCD_CMD_DISPLAYCONTROL | self._displaymode)
 
-    # Set text direction (0 = left to right)
-    def setTextDirection(self, direction = 0):
+
+    def setTextDirection(self, direction = 0):                                                              # 0 = left to right, 1 = right to left
         """
         .. method:: setTextDirection(direction = 0)
 
@@ -220,8 +200,7 @@ class LCD(i2c.I2c):
             self._displaymode &= ~LCD_ENTRYLEFT
         self._command(LCD_CMD_DISPLAYCONTROL | self._displaymode)
 
-    #scroll display left
-    def scrollLeft(self):
+    def scrollLeft(self):                                                                                   #scroll display left
         """
         .. method:: scrollLeft()
 
@@ -230,8 +209,7 @@ class LCD(i2c.I2c):
         """
         self._command(LCD_CMD_CURSORSHIFT | LCD_DISPLAYMOVE | LCD_MOVELEFT)
 
-    #scroll display right
-    def scrollRight(self):
+    def scrollRight(self):                                                                                  #scroll display right
         """
         .. method:: scrollRight()
 
@@ -240,8 +218,7 @@ class LCD(i2c.I2c):
         """
         self._command(LCD_CMD_CURSORSHIFT | LCD_DISPLAYMOVE | LCD_MOVERIGHT)
 
-    # Set the cursor blinking
-    def blinkOn(self, state):
+    def blinkOn(self, state):                                                                               #turn the blinking cursor on/off
         """
         .. method:: blinkOn(state)
 
@@ -257,8 +234,7 @@ class LCD(i2c.I2c):
             self._displaycontrol &= ~LCD_BLINKON
         self._command(LCD_CMD_DISPLAYCONTROL | self._displaycontrol)
 
-    # Turn the display on/off
-    def displayOn(self, state):
+    def displayOn(self, state):                                                                             #turn the display on/off
         """
         .. method:: displayOn(state)
 
@@ -273,9 +249,7 @@ class LCD(i2c.I2c):
             self._displaycontrol &= ~LCD_DISPLAYON
         self._command(LCD_CMD_DISPLAYCONTROL | self._displaycontrol)
 
-
-    # Set cursor position
-    def cursorOn(self, state):
+    def cursorOn(self, state):                                                                              #turns the cursor on/off
         """
         .. method:: cursorOn(state)
 
@@ -290,8 +264,7 @@ class LCD(i2c.I2c):
             self._displaycontrol &= ~LCD_CURSORON
         self._command(LCD_CMD_DISPLAYCONTROL | self._displaycontrol)
 
-    # Home the cursor
-    def home(self):
+    def home(self):                                                                                         #sets the cursor to the home position (0,0)
         """
         ..method:: home()
 
@@ -301,8 +274,7 @@ class LCD(i2c.I2c):
         self._command(LCD_CMD_RETURNHOME)
         sleep(2)
 
-    # Set the cursor position
-    def setCursorPosition(self, col, row):
+    def setCursorPosition(self, col, row):                                                                  #sets the cursor position on the LCD
         """
         .. method:: setCursorPosition(col, row)
 
@@ -312,10 +284,10 @@ class LCD(i2c.I2c):
         :param row: Row (0 to 1)
 
         """
-        self._command(LCD_CMD_SETDDRAMADDR | (col + row*0x40))
+        self._command(LCD_CMD_SETDDRAMADDR | col + row * 0x40)
 
 
-    def writeString(self, string):
+    def writeString(self, string):                                                                          #write an entire string to the LCD
         """
         .. method:: writeString(string)
 
@@ -332,58 +304,36 @@ class LCD(i2c.I2c):
 
     ######## Less low level functions ########
 
-    def _command(self, cmd):
+    def _command(self, cmd):                                                                                #send a command to the LCD
         self._send(cmd, 0)
 
-    def _writeChar(self, char):
+    def _writeChar(self, char):                                                                             #write a character to the LCD
         self._send(ord(char), LCD_MODE_RS)
         return 1
 
     ######## Low level commands #########
 
-    def _send(self, data, mode):
+    def _send(self, data, mode):                                                                            #send a byte or data to the LCD
         highBits = data & 0xF0
         lowBits = (data << 4) & 0xF0
         self._write4bits(highBits | mode)
         self._write4bits(lowBits | mode)
 
-    def _write4bits(self, data):
+    def _write4bits(self, data):                                                                            #the data is sent 4 bits at a time with the last 4 bits being screen controls
         self._expanderWrite(data)
         self._pulseEnable(data)
 
-    def _pulseEnable(self, data):
+    def _pulseEnable(self, data):                                                                           #pulses the enable pin to send data to the LCD
         self._expanderWrite(data | LCD_MODE_ENABLE)
         sleep(1)
         self._expanderWrite(data & ~LCD_MODE_ENABLE)
         sleep(1)
 
-    def _expanderWrite(self, data):
+    def _expanderWrite(self, data):                                                                         #sends the data to the LCD appending the backlight value
         self._write(data | self._backlightval)
 
-    def _write(self, data):
+    def _write(self, data):                                                                                 #sends the data to the LCD
         buffer = bytearray(1)
         buffer.append(data)
         self.write(bytearray(buffer))
-        sleep(3)
-
-
-
-
-    #Reading functions, to review
-    # def _read_uint_from_16_to_19(self, reg):
-    #     data = self.write_read(bytearray([reg,]), 3) #data[0] --> MSB, data[1] --> LSB, data[2] --> XLSB
-    #     res = (((data[0] << 16) + (data[1] << 8) + data[2]) >> (8-self._oss))
-    #     return res
-
-    # #Read raw temperature or uint16 register
-    # def _read_uint16(self, reg):
-    #     data = self.write_read(bytearray([reg,]), 2) #data[0] --> MSB, data[1] --> LSB
-    #     res = ((data[0] << 8 | (data[1])) & 0xFFFF)
-    #     return res
-
-    # #Read int16 register
-    # def _read_int16(self, reg):
-    #     res = self._read_uint16(reg)
-    #     if res > 32767:
-    #         res -= 65536
-    #     return res
+        sleep(2)
